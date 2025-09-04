@@ -44,21 +44,6 @@ local process_name = "RobloxPlayerBeta.exe"
 if mem.InitMemory(process_name, nil) then
     local base = mem.BaseAddress()
     print(string.format("Base: 0x%X", tonumber(base)))
-
-    -- fake example: base + offset (you’ll need to resolve actual entity pointer!)
-    local humanoidAddr = base + 0x123456 -- pointer to humanoid
-    local healthAddr   = humanoidAddr + 0x19c  -- Offsets::Humanoid::Health
-
-    local health = read_float(healthAddr)
-    if health then
-        print("Health =", health)
-        if health > 0 then
-            print("Player alive ✅")
-        else
-            print("Player dead ❌")
-        end
-    end
-
     mem.FreeMemoryDLL()
 end
 
