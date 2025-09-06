@@ -21,13 +21,34 @@ end
 
 local DataModel = actor:GetDataModel()
 local Workspace = actor:FindFirstChild(DataModel,"Workspace")
+local Player = actor:FindFirstChild(Workspace,"ant_2444")
+local Torso = actor:FindFirstChild(Player,"UpperTorso")
+local PrimTorso = Torso + offsets.Primitive
 
-
-
-for i,v in pairs(actor:GetChildren(Workspace)) do
-    actor:SetProperty(v + offsets.Name, "string_ptr", "crazy",6)
-    print(actor:GetInstanceName(v))
+while true do
+    for i,v in pairs(actor:readVector3(PrimTorso + offsets.Velocity)) do
+        print(v)
+    end
+    wait(0.1)
 end
+
+
+
+-- for i,v in pairs(actor:GetChildren(Player)) do
+--     if actor:GetInstanceName(v) == "LowerTorso" then
+--         print(v)
+--     end
+-- end
+-- print(helpers.read_mem(Humanoid + offsets.Sit, "qword"))
+-- print(1679388926976 + offsets.Velocity)
+
+-- for i,v in pairs(actor:GetChildren(Workspace)) do
+--     actor:SetProperty(v + offsets.Name, "string_ptr", "crazy",6)
+--     print(actor:GetInstanceName(v))
+-- end
+
+
+
     wait(0.01)
 
 mem.FreeMemoryDLL()
