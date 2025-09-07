@@ -31,12 +31,19 @@ local MEM_RELEASE = 0x8000
 local PAGE_READWRITE = 0x04
 
 local type_map = {
-    qword  = { ctype = "uint64_t[1]", enum = ffi.C.MEM_QWORD },
-    dword  = { ctype = "unsigned int[1]", enum = ffi.C.MEM_DWORD },
-    float  = { ctype = "float[1]", enum = ffi.C.MEM_FLOAT },
-    double = { ctype = "double[1]", enum = ffi.C.MEM_DOUBLE },
-    bool   = { ctype = "bool[1]", enum = ffi.C.MEM_BOOL },
-    string = { ctype = "char[?]", enum = ffi.C.MEM_STRING },
+    qword     = { ctype = "uint64_t[1]",   enum = ffi.C.MEM_QWORD },
+    dword     = { ctype = "unsigned int[1]", enum = ffi.C.MEM_DWORD },
+    float     = { ctype = "float[1]",      enum = ffi.C.MEM_FLOAT },
+    double    = { ctype = "double[1]",     enum = ffi.C.MEM_DOUBLE },
+    bool      = { ctype = "bool[1]",       enum = ffi.C.MEM_BOOL },
+    string    = { ctype = "char[?]",       enum = ffi.C.MEM_STRING },
+    
+    int64     = { ctype = "int64_t[1]",    enum = ffi.C.MEM_QWORD },    -- signed 64-binary
+
+    vector3f  = { ctype = "float[3]",      enum = ffi.C.MEM_FLOAT },   -- Vector3 stored as 3 floats
+    vector3d  = { ctype = "double[3]",     enum = ffi.C.MEM_DOUBLE },  -- Vector3 stored as 3 doubles
+
+    cframe    = { ctype = "float[12]",     enum = ffi.C.MEM_FLOAT },   -- Roblox CFrame stored as 12 floats (3x3 rotation + position)
 }
 
 local M = {}
@@ -62,11 +69,19 @@ function M.base_address()
 end
 
 -- Read memory
-function M.read_mem(addr, mtype, size)
+function M.read_mem(addr, mtype, size, raw, enum)
     local t = type_map[mtype]
-    assert(t, "Invalid memory type: " .. tostring(mtype))
-
-    if mtype == "string" then
+    if t == nil then
+        t = {}
+        t.ctype = mtype
+        t.enum = enum
+    end
+    if raw == true then
+        local buf = ffi.new(t.ctype, size or 256)
+        if mem.ReadMemory(addr, t.enum, buf, size or 256) then
+            return buf
+        end
+    elseif mtype == "string" then
         local buf = ffi.new(t.ctype, size or 256)
         if mem.ReadMemory(addr, t.enum, buf, size or 256) then
             return ffi.string(buf)
@@ -258,5 +273,7 @@ function M.cleanup_all_tracked()
     allocated_memory = {}
     return freed_count
 end
+
+M.mem = mem
 
 return M

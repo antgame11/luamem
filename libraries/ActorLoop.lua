@@ -1,3 +1,6 @@
+local ffi = require("ffi")
+local Vector3 = require("libraries.roblox.Vector3")
+
 local ActorLoop = {}
 ActorLoop.__index = ActorLoop
 
@@ -46,29 +49,19 @@ local function is_valid_utf8(s)
     return true
 end
 
-function ActorLoop:writeVector3(address, x, y, z)
-    local writes = {
-        {addr = address + 0x0, type = "float", value = x},
-        {addr = address + 0x4, type = "float", value = y},
-        {addr = address + 0x8, type = "float", value = z}
-    }
-    local results = self.memory.batch_write(writes)
-    return results[1] and results[2] and results[3]
+function ActorLoop:write_vector3(address, vec)
+    assert(vec and vec.x and vec.y and vec.z, "vec must be a Vector3-like table")
+    -- create a float[3] buffer
+    local buf = ffi.new("float[3]", { tonumber(vec.x), tonumber(vec.y), tonumber(vec.z) })
+    return self.memory.mem.WriteMemory(address, ffi.C.MEM_FLOAT, buf, 0)
 end
 
-
--- Add this function to your ActorLoop class
-
-function ActorLoop:readVector3(address)
-    local x = self:safe_read_float(address + 0x0)
-    local y = self:safe_read_float(address + 0x4)
-    local z = self:safe_read_float(address + 0x8)
-    
-    return {
-        x = x or 0.0,
-        y = y or 0.0,
-        z = z or 0.0
-    }
+function ActorLoop:read_vector3(address)
+    local buf = ffi.new("float[3]")
+    if self.memory.mem.ReadMemory(address, ffi.C.MEM_FLOAT, buf, 0) then
+        return Vector3.new(tonumber(buf[1]), tonumber(buf[2]), tonumber(buf[0])) -- careful: ordering below
+    end
+    return nil
 end
 
 function ActorLoop:SetProperty(instance_addr, mtype, value, size)
@@ -122,7 +115,7 @@ function ActorLoop:SetProperty(instance_addr, mtype, value, size)
             return false, "Failed to write string pointer"
         end
         
-        return true, "Success", str_addr
+        return true, str_addr
         
     elseif mtype == "qword" then
         if type(value) ~= "number" then
@@ -189,23 +182,23 @@ function ActorLoop:GetProperty(instance_addr, mtype, size)
         
     elseif mtype == "qword" then
         local value = self:safe_read_qword(target_addr)
-        return value, "Success"
+        return value
         
     elseif mtype == "dword" then
         local value = self:safe_read_dword(target_addr)
-        return value, "Success"
+        return value
         
     elseif mtype == "float" then
         local value = self:safe_read_float(target_addr)
-        return value, "Success"
+        return value
         
     elseif mtype == "double" then
         local value = self:safe_read_double(target_addr)
-        return value, "Success"
+        return value
         
     elseif mtype == "bool" then
         local value = self:safe_read_bool(target_addr)
-        return value, "Success"
+        return value
         
     else
         return nil, "Unsupported memory type: " .. tostring(mtype)
